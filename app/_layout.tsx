@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { initializeNotifications, registerForPushNotificationsAsync } from './notifications';
 
 function CustomHeader() {
   const goToHome = () => {
@@ -26,6 +27,21 @@ function CustomHeader() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    initializeNotifications();
+
+    registerForPushNotificationsAsync()
+      .then((token) => {
+        if (token) {
+          console.log('Push token registrado:', token);
+          // TODO: enviar token a Firebase o a tu backend para notificaciones personalizadas
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('Error al registrar notificaciones push:', error);
+      });
+  }, []);
+
   return (
     <Stack
       screenOptions={{

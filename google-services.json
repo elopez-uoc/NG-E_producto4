@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "937779816336",
+    "project_id": "nge-producto2",
+    "storage_bucket": "nge-producto2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:937779816336:android:a2e45c730b9574d6d53515",
+        "android_client_info": {
+          "package_name": "nge.players.final"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBERsUWRE3dwUWUE62c5CJadxH_gTXeuc8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

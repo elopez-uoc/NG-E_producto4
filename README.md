@@ -53,6 +53,10 @@ Aplicación móvil desarrollada con **React Native** y **Expo SDK 54**, que mues
        appId: "tu-app-id"
      };
      ```
+   - Para habilitar Firebase Cloud Messaging (FCM) en Android e iOS, añade los archivos de configuración nativos `google-services.json` y `GoogleService-Info.plist` cuando los tengas disponibles.
+   - Ya existe `google-services.json` en el proyecto, así que Android ya está preparado en `app.json`.
+   - El proyecto incluye una carpeta `functions/` con una Cloud Function que envía notificaciones FCM cuando se crea, actualiza o elimina un documento de la colección `jugadores`.
+   - Para que la función envíe notificaciones, guarda los tokens de dispositivo en la colección `fcm_tokens` con documentos que contengan el campo `token`.
 
 4. **Inicia la aplicación**
    ```bash
@@ -109,6 +113,7 @@ npx eslint . --ext .ts,.tsx
 ├── types/
 │   └── navigation.ts        # Definiciones de tipos para BasketballPlayer
 ├── firebaseConfig.ts        # Configuración de Firebase
+├── functions/               # Cloud Functions de Firebase para enviar notificaciones FCM
 ├── app.json                 # Configuración de Expo
 └── package.json             # Dependencias del proyecto
 ```
