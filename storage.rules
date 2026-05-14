@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Permitir lectura pública de archivos en la carpeta 'public'
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // Bloquear acceso a otras carpetas
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
