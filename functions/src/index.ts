@@ -6,7 +6,7 @@ const db = admin.firestore();
 
 export const enviarNotificacionCuandoSeActualiceJugador = functions.region('europe-west1').firestore
   .document('jugadores/{playerId}')
-  .onWrite(async (change, context) => {
+  .onWrite(async (change: { before: { exists: any; data: () => any; }; after: { exists: any; data: () => any; }; }, context: { params: { playerId: any; }; }) => {
     const beforeData = change.before.exists ? change.before.data() : null;
     const afterData = change.after.exists ? change.after.data() : null;
 
@@ -29,13 +29,20 @@ export const enviarNotificacionCuandoSeActualiceJugador = functions.region('euro
     }
 
     const tokensSnapshot = await db.collection('fcm_tokens').get();
-    const tokens = tokensSnapshot.docs
+    // De-duplicamos tokens para evitar envíos múltiples al mismo dispositivo
+    const tokens = Array.from(new Set(tokensSnapshot.docs
       .map((doc) => doc.data().token)
-      .filter((token): token is string => typeof token === 'string');
+      .filter((token): token is string => typeof token === 'string')));
 
     if (tokens.length === 0) {
       functions.logger.info('No se encontró ningún token FCM. No se envía notificación.');
       return null;
+    }
+
+    // sendEachForMulticast tiene un límite de 500 tokens por llamada
+    if (tokens.length > 500) {
+      functions.logger.warn(`Se detectaron ${tokens.length} tokens. Limitando el envío a los primeros 500.`);
+      tokens.splice(500);
     }
 
     const message: admin.messaging.MulticastMessage = {
@@ -49,7 +56,7 @@ export const enviarNotificacionCuandoSeActualiceJugador = functions.region('euro
       },
     };
 
-    const response = await admin.messaging().sendMulticast(message);
+    const response = await admin.messaging().sendEachForMulticast(message);
 
     const failedTokens: string[] = [];
     response.responses.forEach((resp, index) => {

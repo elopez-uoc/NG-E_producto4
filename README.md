@@ -16,6 +16,8 @@ Aplicación móvil desarrollada con **React Native** y **Expo SDK 54**, que mues
 - ✅ **Campos de jugador**: nombre, equipo, posición, altura, edad, PPP, APP, RPP, porcentaje de tiros, etc.
 - ✅ **Navegación fluida** entre pantallas con Expo Router
 - ✅ **TypeScript** completo para type safety
+- ✅ **Firebase Cloud Messaging (FCM)**: Notificaciones push automáticas cuando cambian jugadores
+- ✅ **Cloud Functions (2ª generación)**: Triggers `onWrite` y `onUpdate` en Firestore
 
 ## 🚀 Inicio rápido
 
@@ -55,10 +57,16 @@ Aplicación móvil desarrollada con **React Native** y **Expo SDK 54**, que mues
      ```
    - Para habilitar Firebase Cloud Messaging (FCM) en Android e iOS, añade los archivos de configuración nativos `google-services.json` y `GoogleService-Info.plist` cuando los tengas disponibles.
    - Ya existe `google-services.json` en el proyecto, así que Android ya está preparado en `app.json`.
-   - El proyecto incluye una carpeta `functions/` con una Cloud Function que envía notificaciones FCM cuando se crea, actualiza o elimina un documento de la colección `jugadores`.
-   - Para que la función envíe notificaciones, guarda los tokens de dispositivo en la colección `fcm_tokens` con documentos que contengan el campo `token`.
 
-4. **Inicia la aplicación**
+4. **Cloud Functions y FCM**
+   - El proyecto incluye una carpeta `functions/` con Cloud Functions (2ª generación) que envían automáticamente notificaciones FCM.
+   - Lee [CLOUD_MESSAGING_SETUP.md](CLOUD_MESSAGING_SETUP.md) para la guía completa de implementación.
+   - Incluye triggers:
+     - `notifyOnPlayerWrite`: Se dispara ante cualquier cambio (crear, actualizar, eliminar)
+     - `notifyOnPlayerUpdate`: Se dispara solo en actualizaciones con mensajes personalizados
+   - Los tokens se guardan en la colección `fcm_tokens` en Firestore.
+
+5. **Inicia la aplicación**
    ```bash
    npx expo start
    ```
