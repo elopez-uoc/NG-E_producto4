@@ -1,4 +1,5 @@
 import { Alert, Platform } from 'react-native';
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 
@@ -6,6 +7,8 @@ export function initializeNotifications() {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
     }),
@@ -13,6 +16,11 @@ export function initializeNotifications() {
 }
 
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    console.log('Notificaciones push omitidas en entorno web.');
+    return null;
+  }
+
   if (!Device.isDevice) {
     Alert.alert(
       'Notificaciones push',
@@ -20,16 +28,16 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     );
     return null;
   }
+  const existingStatus = await Notifications.getPermissionsAsync();
+  // Newer versions return a boolean 'granted' instead of a 'status' string
+  let finalGranted = Boolean((existingStatus as any).granted ?? ((existingStatus as any).status === 'granted'));
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
+  if (!finalGranted) {
+    const requestStatus = await Notifications.requestPermissionsAsync();
+    finalGranted = Boolean((requestStatus as any).granted ?? ((requestStatus as any).status === 'granted'));
   }
 
-  if (finalStatus !== 'granted') {
+  if (!finalGranted) {
     Alert.alert(
       'Permisos denegados',
       'No se otorgaron permisos para recibir notificaciones push.'
@@ -37,7 +45,13 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     return null;
   }
 
-  const tokenData = await Notifications.getExpoPushTokenAsync();
+  // Se recomienda pasar el projectId obtenido de la configuración de Expo
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? 
+                    Constants.easConfig?.projectId;
+
+  const tokenData = await Notifications.getExpoPushTokenAsync({
+    projectId,
+  });
   const token = tokenData.data;
 
   if (Platform.OS === 'android') {

@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     ScrollView,
     StyleSheet,
@@ -12,16 +12,42 @@ import {
 } from 'react-native';
 import ImageZoom from 'react-native-image-zoom-viewer';
 import { BasketballPlayer } from '../types/navigation';
-import { requireImage } from '../firebaseConfig';
+import { db, requireImage } from '../firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function Detail() {
-  const { item: itemString } = useLocalSearchParams();
-  const item: BasketballPlayer = JSON.parse(itemString as string);
+  const { item: itemString, playerId } = useLocalSearchParams();
+  const [item, setItem] = useState<BasketballPlayer | null>(null);
   const [zoomVisible, setZoomVisible] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [loadingPlayer, setLoadingPlayer] = useState(true);
+
+  useEffect(() => {
+    if (itemString) {
+      setItem(JSON.parse(itemString as string));
+      setLoadingPlayer(false);
+    } else if (playerId) {
+      // Cargar desde Firestore si venimos de una notificación
+      const fetchPlayer = async () => {
+        try {
+          const docRef = doc(db, 'jugadores', playerId as string);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setItem({ id: docSnap.id, ...docSnap.data() } as BasketballPlayer);
+          }
+        } catch (error) {
+          console.error("Error al cargar jugador:", error);
+        } finally {
+          setLoadingPlayer(false);
+        }
+      };
+      fetchPlayer();
+    }
+  }, [itemString, playerId]);
 
   const handlePlayPress = () => {
+    if (!item) return;
     router.push({
       pathname: '/video',
       params: { item: JSON.stringify(item) }
@@ -29,7 +55,7 @@ export default function Detail() {
   };
 
   const imageSource = useMemo(() => {
-    if (!item.img) return null;
+    if (!item?.img) return null;
     
     // Usar el mapa estático de imágenes
     try {
@@ -38,7 +64,7 @@ export default function Detail() {
       console.error('Error cargando imagen:', err);
       return null;
     }
-  }, [item.img]);
+  }, [item?.img]);
 
   // Para ImageZoom, intentar crear una URL válida
   const imageData = useMemo(() => {
@@ -54,6 +80,16 @@ export default function Detail() {
       return [];
     }
   }, [imageSource]);
+
+  if (loadingPlayer) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
+
+  if (!item) return null;
 
   return (
     <ScrollView style={styles.container}>
@@ -180,6 +216,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f3f4f6',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     backgroundColor: '#ffffff',

@@ -5,6 +5,7 @@
     "node": "18"
   },
   "scripts": {
+    "lint": "tsc --noEmit",
     "build": "tsc",
     "deploy": "firebase deploy --only functions",
     "serve": "firebase emulators:start --only functions"

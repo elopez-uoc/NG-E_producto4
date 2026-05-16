@@ -57,7 +57,7 @@ export default function RootLayout() {
 
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
-      const playerId = data.playerId;
+      const playerId = data?.playerId ? String(data.playerId) : undefined;
 
       // Navegar al detalle del jugador
       if (playerId) {

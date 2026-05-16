@@ -4,9 +4,10 @@ import * as functions from 'firebase-functions';
 admin.initializeApp();
 const db = admin.firestore();
 
-export const enviarNotificacionCuandoSeActualiceJugador = functions.region('europe-west1').firestore
+export const enviarNotificacionCuandoSeActualiceJugador = functions.region('europe-west1')
+  .firestore
   .document('jugadores/{playerId}')
-  .onWrite(async (change: { before: { exists: any; data: () => any; }; after: { exists: any; data: () => any; }; }, context: { params: { playerId: any; }; }) => {
+  .onWrite(async (change, context) => {
     const beforeData = change.before.exists ? change.before.data() : null;
     const afterData = change.after.exists ? change.after.data() : null;
 
@@ -68,10 +69,7 @@ export const enviarNotificacionCuandoSeActualiceJugador = functions.region('euro
     if (failedTokens.length > 0) {
       functions.logger.warn('Tokens inválidos detectados, borrando de Firestore:', failedTokens);
       await Promise.all(
-        failedTokens.map(async (token) => {
-          const querySnapshot = await db.collection('fcm_tokens').where('token', '==', token).get();
-          await Promise.all(querySnapshot.docs.map((doc) => doc.ref.delete()));
-        })
+        failedTokens.map((token) => db.collection('fcm_tokens').doc(token).delete())
       );
     }
 

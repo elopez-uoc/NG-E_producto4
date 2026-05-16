@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "module": "commonjs",
+    "module": "Node16",
     "lib": ["es2020"],
     "strict": true,
     "rootDir": "src",
@@ -9,7 +9,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node16"
   },
   "include": ["src"]
 }
