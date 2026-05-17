@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Permitir lectura pública para todos los documentos
+    // Útil para apps sin autenticación como esta
+    match /{document=**} {
+      allow read: if true;
+      allow write: if false; // Solo permitir escritura desde el backend/admin
+    }
+  }
+}
