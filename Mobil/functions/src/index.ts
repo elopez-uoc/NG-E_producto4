@@ -8,13 +8,13 @@ export const enviarNotificacionCuandoSeActualiceJugador = functions.region('euro
   .firestore
   .document('jugadores/{playerId}')
   .onWrite(async (change, context) => {
-    const beforeData = change.before.exists ? change.before.data() : null;
-    const afterData = change.after.exists ? change.after.data() : null;
+    const beforeData = change.before.exists ? change.before.data() : null as any;
+    const afterData = change.after.exists ? change.after.data() : null as any;
 
     let title = 'Actualización en jugadores';
     let body = 'Se ha producido un cambio en la colección de jugadores.';
 
-    if (!beforeData && afterData) {
+    if (!change.before.exists && change.after.exists) {
       title = 'Nuevo jugador añadido';
       body = `Se ha añadido ${afterData.nombre ?? 'un jugador'} al ranking.`;
     } else if (beforeData && afterData) {
@@ -24,54 +24,55 @@ export const enviarNotificacionCuandoSeActualiceJugador = functions.region('euro
       if (beforeData.pPP !== afterData.pPP) {
         body = `${afterData.nombre ?? 'El jugador'} ahora tiene ${afterData.pPP ?? '0'} PPP.`;
       }
-    } else if (beforeData && !afterData) {
+    } else if (change.before.exists && !change.after.exists) {
       title = 'Jugador eliminado';
       body = `${beforeData.nombre ?? 'Un jugador'} fue eliminado del ranking.`;
     }
 
-    const tokensSnapshot = await db.collection('fcm_tokens').get();
-    // De-duplicamos tokens para evitar envíos múltiples al mismo dispositivo
-    const tokens = Array.from(new Set(tokensSnapshot.docs
-      .map((doc) => doc.data().token)
-      .filter((token): token is string => typeof token === 'string')));
+    // Importación dinámica obligatoria para módulos ESM en entornos CommonJS con Node16
+    const { Expo } = await import('expo-server-sdk');
+    const expo = new Expo();
 
-    if (tokens.length === 0) {
+    const tokensSnapshot = await db.collection('fcm_tokens').get();
+    const pushTokens = Array.from(new Set(tokensSnapshot.docs
+      .map((doc) => doc.data().token)
+      .filter((token): token is string => typeof token === 'string' && Expo.isExpoPushToken(token))));
+
+    if (pushTokens.length === 0) {
       functions.logger.info('No se encontró ningún token FCM. No se envía notificación.');
       return null;
     }
 
-    // sendEachForMulticast tiene un límite de 500 tokens por llamada
-    if (tokens.length > 500) {
-      functions.logger.warn(`Se detectaron ${tokens.length} tokens. Limitando el envío a los primeros 500.`);
-      tokens.splice(500);
+    // Construir mensajes para Expo
+    const messages = pushTokens.map(token => ({
+      to: token,
+      sound: 'default',
+      title,
+      body,
+      data: { playerId: context.params.playerId },
+    }));
+
+    // Dividir en grupos (chunks) según requiere Expo y enviar
+    const chunks = expo.chunkPushNotifications(messages);
+    const tickets = [];
+    
+    for (const chunk of chunks) {
+      try {
+        const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+        tickets.push(...ticketChunk);
+      } catch (error) {
+        functions.logger.error('Error enviando a Expo:', error);
+      }
     }
 
-    const message: admin.messaging.MulticastMessage = {
-      notification: {
-        title,
-        body,
-      },
-      tokens,
-      data: {
-        playerId: context.params.playerId,
-      },
-    };
-
-    const response = await admin.messaging().sendEachForMulticast(message);
-
-    const failedTokens: string[] = [];
-    response.responses.forEach((resp, index) => {
-      if (!resp.success) {
-        failedTokens.push(tokens[index]);
+    // Opcional: Manejar tickets fallidos (tokens antiguos)
+    tickets.forEach((ticket, index) => {
+      if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
+        const invalidToken = pushTokens[index];
+        functions.logger.warn('Borrando token inválido:', invalidToken);
+        db.collection('fcm_tokens').doc(invalidToken).delete();
       }
     });
-
-    if (failedTokens.length > 0) {
-      functions.logger.warn('Tokens inválidos detectados, borrando de Firestore:', failedTokens);
-      await Promise.all(
-        failedTokens.map((token) => db.collection('fcm_tokens').doc(token).delete())
-      );
-    }
 
     return null;
   });

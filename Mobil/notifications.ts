@@ -28,16 +28,15 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     // Eliminamos el return null para permitir que el emulador intente obtener el token
   }
 
-  const existingStatus = await Notifications.getPermissionsAsync();
-  // Newer versions return a boolean 'granted' instead of a 'status' string
-  let finalGranted = Boolean((existingStatus as any).granted ?? ((existingStatus as any).status === 'granted'));
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
 
-  if (!finalGranted) {
-    const requestStatus = await Notifications.requestPermissionsAsync();
-    finalGranted = Boolean((requestStatus as any).granted ?? ((requestStatus as any).status === 'granted'));
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
   }
 
-  if (!finalGranted) {
+  if (finalStatus !== 'granted') {
     Alert.alert(
       'Permisos denegados',
       'No se otorgaron permisos para recibir notificaciones push.'

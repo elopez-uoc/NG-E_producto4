@@ -55,6 +55,11 @@ export default function RootLayout() {
 
     setupNotifications();
 
+    // Escucha notificaciones que llegan mientras la app está abierta
+    const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notificación recibida en primer plano:', notification.request.content.title);
+    });
+
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
       const playerId = data?.playerId ? String(data.playerId) : undefined;
@@ -68,7 +73,10 @@ export default function RootLayout() {
       }
     });
 
-    return () => subscription.remove();
+    return () => {
+      foregroundSubscription.remove();
+      subscription.remove();
+    };
   }, []);
 
   return (
