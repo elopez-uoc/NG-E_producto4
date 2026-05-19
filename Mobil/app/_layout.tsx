@@ -2,10 +2,11 @@ import { Stack } from 'expo-router';
 import React, { useEffect } from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, Platform, StatusBar } from 'react-native';
 import { router } from 'expo-router';
-import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { initializeNotifications, registerForPushNotificationsAsync } from './notifications';
+import { db } from '../firebaseConfig';
+import { initializeNotifications, registerForPushNotificationsAsync } from '../notifications';
 
 function CustomHeader() {
   const goToHome = () => {
@@ -40,7 +41,6 @@ export default function RootLayout() {
         const token = await registerForPushNotificationsAsync();
         if (token) {
           console.log('Push token registrado:', token);
-          const db = getFirestore();
           // Usamos setDoc con el token como ID para evitar duplicados en la base de datos
           await setDoc(doc(db, 'fcm_tokens', token), {
             token,

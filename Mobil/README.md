@@ -75,6 +75,15 @@ Aplicación móvil desarrollada con **React Native** y **Expo SDK 54**, que mues
 
 ### Opciones de ejecución:
 
+- **Development Build (Recomendado)**:
+  Ideal para probar Firebase Cloud Messaging y evitar limitaciones de versiones.
+  ```bash
+  # Instalar cliente de desarrollo
+  npx expo install expo-dev-client
+  # Compilar y ejecutar en Android
+  npx expo run:android
+  ```
+
 - **Expo Go** (recomendado para desarrollo rápido):
   - Escanea el código QR con la app Expo Go en tu dispositivo móvil
 
@@ -184,4 +193,3 @@ interface BasketballPlayer {
   videoUrl?: string;        // URL de YouTube del jugador (ej: https://youtu.be/yjR6Q4FspFc)
 }
 ```
-

@@ -22,12 +22,12 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   }
 
   if (!Device.isDevice) {
-    Alert.alert(
-      'Notificaciones push',
-      'Las notificaciones push solo funcionan en un dispositivo físico.'
+    console.warn(
+      'Ejecutando en emulador: Las notificaciones push podrían no funcionar correctamente.'
     );
-    return null;
+    // Eliminamos el return null para permitir que el emulador intente obtener el token
   }
+
   const existingStatus = await Notifications.getPermissionsAsync();
   // Newer versions return a boolean 'granted' instead of a 'status' string
   let finalGranted = Boolean((existingStatus as any).granted ?? ((existingStatus as any).status === 'granted'));
@@ -63,5 +63,10 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     });
   }
 
+  console.log('Push token registrado:', token);
   return token;
 }
+
+// Esto evita el error de Expo Router si mantienes el archivo en la carpeta app/
+// Pero lo ideal es mover este archivo a la raíz del proyecto.
+export default null;

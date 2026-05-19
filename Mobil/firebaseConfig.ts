@@ -1,5 +1,6 @@
 import { getApps, initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { Platform } from "react-native";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB7i_V7VbK1JQsOIt3hzn_kTByhmhHXj3w",
@@ -12,7 +13,31 @@ const firebaseConfig = {
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-export const db = getFirestore(app);
+
+// Usamos initializeFirestore para forzar long-polling. 
+// Esto soluciona el error "Could not reach Cloud Firestore backend" en la mayoría de dispositivos móviles.
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
+
+// Configuración para conectar con el Emulador de Firebase
+if (__DEV__) {
+  // Si usas el emulador de Android, debes usar '10.0.2.2'.
+  // Si usas un dispositivo físico o iOS, usa la IP local de tu PC (asegúrate de que sea correcta).
+  const EMULATOR_HOST = Platform.OS === 'android' 
+    ? '10.0.2.2' 
+    : '192.168.0.50'; // <-- Asegúrate de que esta IP coincida con la de tu PC
+
+  const FIRESTORE_PORT = 8080;
+
+  try {
+    // Nota: connectFirestoreEmulator debe llamarse antes de cualquier otra operación con db
+    connectFirestoreEmulator(db, EMULATOR_HOST, FIRESTORE_PORT);
+    console.log(`Conectado al emulador de Firestore en ${EMULATOR_HOST}:${FIRESTORE_PORT}`);
+  } catch (e) {
+    console.warn("Error conectando al emulador de Firestore:", e);
+  }
+}
 
 // Mapa estático de imágenes disponibles (require debe ser estático en React Native)
 const imageAssets: { [key: string]: any } = {
@@ -27,7 +52,7 @@ const imageAssets: { [key: string]: any } = {
   'assets/photos/jordan_michael_1.jpg': require('./assets/photos/jordan_michael_1.jpg'),
   'assets/photos/nikola-jokic.webp': require('./assets/photos/nikola-jokic.webp'),
   'assets/photos/stephen-curry.webp': require('./assets/photos/stephen-curry.webp'),
-  'assets/photos/avatar-de-jugador-baloncesto-d-en-con-camiseta-amarilla-sosteniendo-un-icono-ideal-para-juegos-deportivos-o-contenido-educativo-387993870.avif': require('./assets/photos/avatar-de-jugador-baloncesto-d-en-con-camiseta-amarilla-sosteniendo-un-icono-ideal-para-juegos-deportivos-o-contenido-educativo-387993870.avif'),
+  'assets/photos/avatar_amarillo.avif': require('./assets/photos/avatar_amarillo.avif'),
 };
 
 // Función para cargar imágenes locales con require
