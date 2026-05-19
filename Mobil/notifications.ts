@@ -47,7 +47,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
   // Se recomienda pasar el projectId obtenido de la configuración de Expo
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? 
-                    Constants.easConfig?.projectId;
+                    Constants.easConfig?.projectId ?? "3623c06e-caba-4cbd-b110-9d1ecc105238";
 
   const tokenData = await Notifications.getExpoPushTokenAsync({
     projectId,
